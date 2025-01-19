@@ -1,0 +1,303 @@
+diff -NBaur a/lib/connect.c b/lib/connect.c
+--- a/lib/connect.c     2020-08-17 14:34:42.000000000 +0200
++++ b/lib/connect.c     2025-01-17 23:27:50.181137600 +0100
+@@ -111,6 +111,9 @@
+ tcpkeepalive(struct Curl_easy *data,
+              curl_socket_t sockfd)
+ {
++  (void) sockfd;
++  infof(data, "SO_KEEPALIVE is not supported on DS\n");
++#if 0
+   int optval = data->set.tcp_keepalive?1:0;
+
+   /* only set IDLE and INTVL if setting KEEPALIVE is successful */
+@@ -162,6 +165,7 @@
+ #endif
+ #endif
+   }
++#endif
+ }
+
+ static CURLcode
+diff -NBaur a/lib/curl_addrinfo.c b/lib/curl_addrinfo.c
+--- a/lib/curl_addrinfo.c       2020-08-07 17:38:12.000000000 +0200
++++ b/lib/curl_addrinfo.c       2025-01-17 23:28:39.510310200 +0100
+@@ -143,11 +143,11 @@
+     /* ignore elements without required address info */
+     if((ai->ai_addr == NULL) || !(ai->ai_addrlen > 0))
+       continue;
+-
++#if 0 // DS socu returns ai_addrlen = 8
+     /* ignore elements with bogus address size */
+     if((size_t)ai->ai_addrlen < ss_size)
+       continue;
+-
++#endif
+     ca = malloc(sizeof(struct Curl_addrinfo) + ss_size + namelen);
+     if(!ca) {
+       error = EAI_MEMORY;
+diff -NBaur a/lib/socketpair.h b/lib/socketpair.h
+--- a/lib/socketpair.h  2020-08-07 17:38:12.000000000 +0200
++++ b/lib/socketpair.h  2025-01-17 23:33:06.040798000 +0100
+@@ -31,6 +31,6 @@
+ #endif
+
+ /* Defined here to allow specific build configs to disable it completely */
+-#define USE_SOCKETPAIR 1
++#undef USE_SOCKETPAIR
+
+ #endif /* HEADER_CURL_SOCKETPAIR_H */
+diff -NBaur a/lib/vtls/wolfssl.c b/lib/vtls/wolfssl.c
+--- a/lib/vtls/wolfssl.c        2020-08-19 09:36:36.000000000 +0200
++++ b/lib/vtls/wolfssl.c        2025-01-18 18:38:27.960784200 +0100
+@@ -93,8 +93,8 @@
+ #endif
+
+ struct ssl_backend_data {
+-  SSL_CTX* ctx;
+-  SSL*     handle;
++  WOLFSSL_CTX* ctx;
++  WOLFSSL*     handle;
+ };
+
+ static Curl_recv wolfssl_recv;
+@@ -224,7 +224,7 @@
+   struct Curl_easy *data = conn->data;
+   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
+   struct ssl_backend_data *backend = connssl->backend;
+-  SSL_METHOD* req_method = NULL;
++  WOLFSSL_METHOD* req_method = NULL;
+   curl_socket_t sockfd = conn->sock[sockindex];
+ #ifdef HAVE_SNI
+   bool sni = FALSE;
+@@ -247,7 +247,7 @@
+   case CURL_SSLVERSION_TLSv1:
+ #if LIBWOLFSSL_VERSION_HEX >= 0x03003000 /* >= 3.3.0 */
+     /* minimum protocol version is set later after the CTX object is created */
+-    req_method = SSLv23_client_method();
++    req_method = wolfSSLv23_client_method();
+ #else
+     infof(data, "wolfSSL <3.3.0 cannot be configured to use TLS 1.0-1.2, "
+           "TLS 1.0 is used exclusively\n");
+@@ -265,11 +265,11 @@
+ #endif
+     break;
+   case CURL_SSLVERSION_TLSv1_1:
+-    req_method = TLSv1_1_client_method();
++    req_method = wolfTLSv1_1_client_method();
+     use_sni(TRUE);
+     break;
+   case CURL_SSLVERSION_TLSv1_2:
+-    req_method = TLSv1_2_client_method();
++    req_method = wolfTLSv1_2_client_method();
+     use_sni(TRUE);
+     break;
+   case CURL_SSLVERSION_TLSv1_3:
+@@ -304,8 +304,8 @@
+   }
+
+   if(backend->ctx)
+-    SSL_CTX_free(backend->ctx);
+-  backend->ctx = SSL_CTX_new(req_method);
++    wolfSSL_CTX_free(backend->ctx);
++  backend->ctx = wolfSSL_CTX_new(req_method);
+
+   if(!backend->ctx) {
+     failf(data, "SSL: couldn't create a context!");
+@@ -338,7 +338,7 @@
+
+   ciphers = SSL_CONN_CONFIG(cipher_list);
+   if(ciphers) {
+-    if(!SSL_CTX_set_cipher_list(backend->ctx, ciphers)) {
++    if(!wolfSSL_CTX_set_cipher_list(backend->ctx, ciphers)) {
+       failf(data, "failed setting cipher list: %s", ciphers);
+       return CURLE_SSL_CIPHER;
+     }
+@@ -348,7 +348,7 @@
+ #ifndef NO_FILESYSTEM
+   /* load trusted cacert */
+   if(SSL_CONN_CONFIG(CAfile)) {
+-    if(1 != SSL_CTX_load_verify_locations(backend->ctx,
++    if(1 != wolfSSL_CTX_load_verify_locations(backend->ctx,
+                                       SSL_CONN_CONFIG(CAfile),
+                                       SSL_CONN_CONFIG(CApath))) {
+       if(SSL_CONN_CONFIG(verifypeer)) {
+@@ -385,7 +385,7 @@
+   if(SSL_SET_OPTION(cert) && SSL_SET_OPTION(key)) {
+     int file_type = do_file_type(SSL_SET_OPTION(cert_type));
+
+-    if(SSL_CTX_use_certificate_file(backend->ctx, SSL_SET_OPTION(cert),
++    if(wolfSSL_CTX_use_certificate_file(backend->ctx, SSL_SET_OPTION(cert),
+                                      file_type) != 1) {
+       failf(data, "unable to use client certificate (no key or wrong pass"
+             " phrase?)");
+@@ -393,7 +393,7 @@
+     }
+
+     file_type = do_file_type(SSL_SET_OPTION(key_type));
+-    if(SSL_CTX_use_PrivateKey_file(backend->ctx, SSL_SET_OPTION(key),
++    if(wolfSSL_CTX_use_PrivateKey_file(backend->ctx, SSL_SET_OPTION(key),
+                                     file_type) != 1) {
+       failf(data, "unable to set private key");
+       return CURLE_SSL_CONNECT_ERROR;
+@@ -405,7 +405,7 @@
+    * fail to connect if the verification fails, or if it should continue
+    * anyway. In the latter case the result of the verification is checked with
+    * SSL_get_verify_result() below. */
+-  SSL_CTX_set_verify(backend->ctx,
++  wolfSSL_CTX_set_verify(backend->ctx,
+                      SSL_CONN_CONFIG(verifypeer)?SSL_VERIFY_PEER:
+                                                  SSL_VERIFY_NONE,
+                      NULL);
+@@ -457,8 +457,8 @@
+
+   /* Let's make an SSL structure */
+   if(backend->handle)
+-    SSL_free(backend->handle);
+-  backend->handle = SSL_new(backend->ctx);
++    wolfSSL_free(backend->handle);
++  backend->handle = wolfSSL_new(backend->ctx);
+   if(!backend->handle) {
+     failf(data, "SSL: couldn't create a context (handle)!");
+     return CURLE_OUT_OF_MEMORY;
+@@ -509,11 +509,11 @@
+     Curl_ssl_sessionid_lock(conn);
+     if(!Curl_ssl_getsessionid(conn, &ssl_sessionid, NULL, sockindex)) {
+       /* we got a session id, use it! */
+-      if(!SSL_set_session(backend->handle, ssl_sessionid)) {
++      if(!wolfSSL_set_session(backend->handle, ssl_sessionid)) {
+         char error_buffer[WOLFSSL_MAX_ERROR_SZ];
+         Curl_ssl_sessionid_unlock(conn);
+         failf(data, "SSL: SSL_set_session failed: %s",
+-              ERR_error_string(SSL_get_error(backend->handle, 0),
++              wolfSSL_ERR_error_string(wolfSSL_get_error(backend->handle, 0),
+                                error_buffer));
+         return CURLE_SSL_CONNECT_ERROR;
+       }
+@@ -524,7 +524,7 @@
+   }
+
+   /* pass the raw socket into the SSL layer */
+-  if(!SSL_set_fd(backend->handle, (int)sockfd)) {
++  if(!wolfSSL_set_fd(backend->handle, (int)sockfd)) {
+     failf(data, "SSL: SSL_set_fd failed");
+     return CURLE_SSL_CONNECT_ERROR;
+   }
+@@ -567,7 +567,7 @@
+       return CURLE_OUT_OF_MEMORY;
+   }
+
+-  ret = SSL_connect(backend->handle);
++  ret = wolfSSL_connect(backend->handle);
+
+ #ifdef OPENSSL_EXTRA
+   if(Curl_tls_keylog_enabled()) {
+@@ -595,7 +595,7 @@
+
+   if(ret != 1) {
+     char error_buffer[WOLFSSL_MAX_ERROR_SZ];
+-    int  detail = SSL_get_error(backend->handle, ret);
++    int  detail = wolfSSL_get_error(backend->handle, ret);
+
+     if(SSL_ERROR_WANT_READ == detail) {
+       connssl->connecting_state = ssl_connect_2_reading;
+@@ -650,7 +650,7 @@
+ #endif
+     else {
+       failf(data, "SSL_connect failed with error %d: %s", detail,
+-          ERR_error_string(detail, error_buffer));
++          wolfSSL_ERR_error_string(detail, error_buffer));
+       return CURLE_SSL_CONNECT_ERROR;
+     }
+   }
+@@ -763,10 +763,10 @@
+
+   if(SSL_SET_OPTION(primary.sessionid)) {
+     bool incache;
+-    SSL_SESSION *our_ssl_sessionid;
++    WOLFSSL_SESSION *our_ssl_sessionid;
+     void *old_ssl_sessionid = NULL;
+
+-    our_ssl_sessionid = SSL_get_session(backend->handle);
++    our_ssl_sessionid = wolfSSL_get_session(backend->handle);
+
+     Curl_ssl_sessionid_lock(conn);
+     incache = !(Curl_ssl_getsessionid(conn, &old_ssl_sessionid, NULL,
+@@ -807,10 +807,10 @@
+   struct ssl_backend_data *backend = connssl->backend;
+   char error_buffer[WOLFSSL_MAX_ERROR_SZ];
+   int memlen = (len > (size_t)INT_MAX) ? INT_MAX : (int)len;
+-  int rc = SSL_write(backend->handle, mem, memlen);
++  int rc = wolfSSL_write(backend->handle, mem, memlen);
+
+   if(rc < 0) {
+-    int err = SSL_get_error(backend->handle, rc);
++    int err = wolfSSL_get_error(backend->handle, rc);
+
+     switch(err) {
+     case SSL_ERROR_WANT_READ:
+@@ -820,7 +820,7 @@
+       return -1;
+     default:
+       failf(conn->data, "SSL write: %s, errno %d",
+-            ERR_error_string(err, error_buffer),
++            wolfSSL_ERR_error_string(err, error_buffer),
+             SOCKERRNO);
+       *curlcode = CURLE_SEND_ERROR;
+       return -1;
+@@ -835,12 +835,12 @@
+   struct ssl_backend_data *backend = connssl->backend;
+
+   if(backend->handle) {
+-    (void)SSL_shutdown(backend->handle);
+-    SSL_free(backend->handle);
++    (void)wolfSSL_shutdown(backend->handle);
++    wolfSSL_free(backend->handle);
+     backend->handle = NULL;
+   }
+   if(backend->ctx) {
+-    SSL_CTX_free(backend->ctx);
++    wolfSSL_CTX_free(backend->ctx);
+     backend->ctx = NULL;
+   }
+ }
+@@ -855,10 +855,10 @@
+   struct ssl_backend_data *backend = connssl->backend;
+   char error_buffer[WOLFSSL_MAX_ERROR_SZ];
+   int buffsize = (buffersize > (size_t)INT_MAX) ? INT_MAX : (int)buffersize;
+-  int nread = SSL_read(backend->handle, buf, buffsize);
++  int nread = wolfSSL_read(backend->handle, buf, buffsize);
+
+   if(nread < 0) {
+-    int err = SSL_get_error(backend->handle, nread);
++    int err = wolfSSL_get_error(backend->handle, nread);
+
+     switch(err) {
+     case SSL_ERROR_ZERO_RETURN: /* no more data */
+@@ -870,7 +870,7 @@
+       return -1;
+     default:
+       failf(conn->data, "SSL read: %s, errno %d",
+-            ERR_error_string(err, error_buffer),
++            wolfSSL_ERR_error_string(err, error_buffer),
+             SOCKERRNO);
+       *curlcode = CURLE_RECV_ERROR;
+       return -1;
+@@ -921,7 +921,7 @@
+   const struct ssl_connect_data *connssl = &conn->ssl[connindex];
+   struct ssl_backend_data *backend = connssl->backend;
+   if(backend->handle)   /* SSL is in use */
+-    return (0 != SSL_pending(backend->handle)) ? TRUE : FALSE;
++    return (0 != wolfSSL_pending(backend->handle)) ? TRUE : FALSE;
+   else
+     return FALSE;
+ }
+@@ -938,7 +938,7 @@
+   struct ssl_backend_data *backend = connssl->backend;
+
+   if(backend->handle) {
+-    SSL_free(backend->handle);
++    wolfSSL_free(backend->handle);
+     backend->handle = NULL;
+   }
+   return retval;

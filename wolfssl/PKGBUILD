@@ -1,0 +1,46 @@
+pkgname=nds-wolfssl
+pkgver=5.7.6
+pkgrel=1
+pkgdesc="Lightweight, portable, C-language-based SSL/TLS library"
+arch=(any)
+url="https://www.wolfssl.com/"
+license=(GPL-2.0-or-later)
+groups=(nds-portlibs)
+makedepends=(nds-pkg-config dkp-toolchain-vars)
+options=(!strip libtool staticlibs)
+source=("wolfssl-${pkgver}.tar.gz::https://github.com/wolfSSL/wolfssl/archive/refs/tags/v${pkgver}-stable.tar.gz"
+        "${pkgname}.patch")
+sha256sums=("52b1e439e30d1ed8162a16308a8525a862183b67aa30373b11166ecbab000d63"
+            "4e91f5af11c6475a848897adc1e438397fc97c0587f9d168d8e3d734e1af7975")
+
+build() {
+  cd wolfssl-$pkgver-stable
+
+  source /opt/devkitpro/ndsvars.sh
+
+  patch -Np1 -i "$srcdir/$pkgname.patch"
+
+  ./autogen.sh
+
+  ./configure CC="${TOOL_PREFIX}g++" \
+    STRIP="${TOOL_PREFIX}strip" \
+    CFLAGS="-DWOLFSSL_NDS -DWOLFSSL_DH_CONST -UNO_OLD_TLS -I${DEVKITPRO}/calico/include ${CFLAGS} ${CPPFLAGS}" \
+    LIBS="-lfat -lnds9 -lcalico_ds9" \
+    LDFLAGS="-specs=${DEVKITPRO}/calico/share/ds9.specs -L${DEVKITPRO}/calico/lib ${LDFLAGS}" \
+    --prefix=${DEVKITPRO}/portlibs/nds --host=arm-none-eabi \
+    --disable-benchmark --disable-shared \
+    --disable-examples --enable-ecc
+
+  make
+}
+
+package() {
+  cd wolfssl-$pkgver-stable
+
+  source /opt/devkitpro/ndsvars.sh
+
+  make install DESTDIR="$pkgdir"
+
+  install -d "$pkgdir"$PORTLIBS_PREFIX/licenses/$pkgname
+  cp -v LICENSING "$pkgdir"$PORTLIBS_PREFIX/licenses/$pkgname
+}

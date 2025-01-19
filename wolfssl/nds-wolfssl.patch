@@ -1,0 +1,11 @@
+diff -NBaur a/wolfssl/wolfcrypt/settings.h b/wolfssl/wolcrypt/settings.h
+--- a/wolfssl/wolfcrypt/settings.h      2024-12-31 18:58:22.000000000 +0100
++++ b/wolfssl/wolcrypt/settings.h       2025-01-18 22:28:55.089357000 +0100
+@@ -511,7 +511,6 @@
+ #ifdef WOLFSSL_NDS
+     #include <stddef.h>
+     #define SIZEOF_LONG_LONG 8
+-    #define socklen_t int
+     #define IPPROTO_UDP 17
+     #define IPPROTO_TCP 6
+     #define NO_WRITEV
