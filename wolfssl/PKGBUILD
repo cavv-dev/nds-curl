@@ -24,7 +24,7 @@ build() {
 
   ./configure CC="${TOOL_PREFIX}g++" \
     STRIP="${TOOL_PREFIX}strip" \
-    CFLAGS="-DWOLFSSL_NDS -DWOLFSSL_DH_CONST -UNO_OLD_TLS -I${DEVKITPRO}/calico/include ${CFLAGS} ${CPPFLAGS}" \
+    CFLAGS="-DWOLFSSL_NDS -DWOLFSSL_DH_CONST -DOPENSSL_EXTRA -UNO_OLD_TLS -UHAVE_THREAD_LS -I${DEVKITPRO}/calico/include ${CFLAGS} ${CPPFLAGS}" \
     LIBS="-lfat -lnds9 -lcalico_ds9" \
     LDFLAGS="-specs=${DEVKITPRO}/calico/share/ds9.specs -L${DEVKITPRO}/calico/lib ${LDFLAGS}" \
     --prefix=${DEVKITPRO}/portlibs/nds --host=arm-none-eabi \
