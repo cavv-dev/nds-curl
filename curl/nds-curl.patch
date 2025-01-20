@@ -1,49 +1,12 @@
-diff -NBaur a/lib/connect.c b/lib/connect.c
---- a/lib/connect.c     2020-08-17 14:34:42.000000000 +0200
-+++ b/lib/connect.c     2025-01-17 23:27:50.181137600 +0100
-@@ -111,6 +111,9 @@
- tcpkeepalive(struct Curl_easy *data,
-              curl_socket_t sockfd)
+diff -NBaur a/lib/nonblock.c b/lib/nonblock.c
+--- a/lib/nonblock.c    2022-04-25 09:28:11.000000000 +0200
++++ b/lib/nonblock.c    2025-01-20 22:22:57.788730600 +0100
+@@ -47,7 +47,7 @@
+ int curlx_nonblock(curl_socket_t sockfd,    /* operate on this */
+                    int nonblock   /* TRUE or FALSE */)
  {
-+  (void) sockfd;
-+  infof(data, "SO_KEEPALIVE is not supported on DS\n");
-+#if 0
-   int optval = data->set.tcp_keepalive?1:0;
-
-   /* only set IDLE and INTVL if setting KEEPALIVE is successful */
-@@ -162,6 +165,7 @@
- #endif
- #endif
-   }
-+#endif
- }
-
- static CURLcode
-diff -NBaur a/lib/curl_addrinfo.c b/lib/curl_addrinfo.c
---- a/lib/curl_addrinfo.c       2020-08-07 17:38:12.000000000 +0200
-+++ b/lib/curl_addrinfo.c       2025-01-17 23:28:39.510310200 +0100
-@@ -143,11 +143,11 @@
-     /* ignore elements without required address info */
-     if((ai->ai_addr == NULL) || !(ai->ai_addrlen > 0))
-       continue;
--
-+#if 0 // DS socu returns ai_addrlen = 8
-     /* ignore elements with bogus address size */
-     if((size_t)ai->ai_addrlen < ss_size)
-       continue;
--
-+#endif
-     ca = malloc(sizeof(struct Curl_addrinfo) + ss_size + namelen);
-     if(!ca) {
-       error = EAI_MEMORY;
-diff -NBaur a/lib/socketpair.h b/lib/socketpair.h
---- a/lib/socketpair.h  2020-08-07 17:38:12.000000000 +0200
-+++ b/lib/socketpair.h  2025-01-17 23:33:06.040798000 +0100
-@@ -31,6 +31,6 @@
- #endif
-
- /* Defined here to allow specific build configs to disable it completely */
--#define USE_SOCKETPAIR 1
-+#undef USE_SOCKETPAIR
-
- #endif /* HEADER_CURL_SOCKETPAIR_H */
+-#if defined(HAVE_FCNTL_O_NONBLOCK)
++#if defined(HAVE_FCNTL_O_NONBLOCK) && !defined(__NDS__)
+   /* most recent unix versions */
+   int flags;
+   flags = sfcntl(sockfd, F_GETFL, 0);
