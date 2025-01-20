@@ -9,3 +9,15 @@ diff -NBaur a/wolfssl/wolfcrypt/settings.h b/wolfssl/wolcrypt/settings.h
      #define IPPROTO_UDP 17
      #define IPPROTO_TCP 6
      #define NO_WRITEV
+diff -NBaur a/wolfssl/wolfio.h b/wolfssl/wolfio.h
+--- a/wolfssl/wolfio.h  2024-12-31 18:58:22.000000000 +0100
++++ b/wolfssl/wolfio.h  2025-01-20 21:42:50.243195400 +0100
+@@ -843,7 +843,7 @@
+     #endif
+ #endif
+ #ifndef XINET_PTON
+-    #define XINET_PTON(a,b,c)   inet_pton((a),(b),(c))
++    #define XINET_PTON(a,b,c)   ((a) == AF_INET ? inet_aton((b), (struct in_addr *)(c)) : 0)
+     #ifdef USE_WINDOWS_API /* Windows-friendly definition */
+         #undef  XINET_PTON
+         #if defined(__MINGW64__) && !defined(UNICODE)

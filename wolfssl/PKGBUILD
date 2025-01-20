@@ -11,7 +11,7 @@ options=(!strip libtool staticlibs)
 source=("wolfssl-${pkgver}.tar.gz::https://github.com/wolfSSL/wolfssl/archive/refs/tags/v${pkgver}-stable.tar.gz"
         "${pkgname}.patch")
 sha256sums=("52b1e439e30d1ed8162a16308a8525a862183b67aa30373b11166ecbab000d63"
-            "4e91f5af11c6475a848897adc1e438397fc97c0587f9d168d8e3d734e1af7975")
+            "634e2527e5d274aae3cdb77996acdb1ed3541cc855eb8b5cd2cad96e0730ce9c")
 
 build() {
   cd wolfssl-$pkgver-stable
