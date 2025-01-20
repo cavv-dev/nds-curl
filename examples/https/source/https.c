@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2019, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -20,9 +20,9 @@
  *
  ***************************************************************************/
 /* <DESC>
-* Simple HTTPS GET
-* </DESC>
-*/
+ * Simple HTTPS GET
+ * </DESC>
+ */
 #include <nds.h>
 #include <dswifi9.h>
 
@@ -52,25 +52,25 @@ int main(void)
 
 #ifdef SKIP_PEER_VERIFICATION
     /*
-    * If you want to connect to a site who isn't using a certificate that is
-    * signed by one of the certs in the CA bundle you have, you can skip the
-    * verification of the server's certificate. This makes the connection
-    * A LOT LESS SECURE.
-    *
-    * If you have a CA cert for the server stored someplace else than in the
-    * default bundle, then the CURLOPT_CAPATH option might come handy for
-    * you.
-    */
+     * If you want to connect to a site who is not using a certificate that is
+     * signed by one of the certs in the CA bundle you have, you can skip the
+     * verification of the server's certificate. This makes the connection
+     * A LOT LESS SECURE.
+     *
+     * If you have a CA cert for the server stored someplace else than in the
+     * default bundle, then the CURLOPT_CAPATH option might come handy for
+     * you.
+     */
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 #endif
 
 #ifdef SKIP_HOSTNAME_VERIFICATION
     /*
-    * If the site you're connecting to uses a different host name that what
-    * they have mentioned in their server certificate's commonName (or
-    * subjectAltName) fields, libcurl will refuse to connect. You can skip
-    * this check, but this will make the connection less secure.
-    */
+     * If the site you are connecting to uses a different host name that what
+     * they have mentioned in their server certificate's commonName (or
+     * subjectAltName) fields, libcurl will refuse to connect. You can skip
+     * this check, but this will make the connection less secure.
+     */
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 #endif
 

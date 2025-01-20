@@ -1,5 +1,5 @@
 pkgname=nds-curl
-pkgver=7.72.0
+pkgver=7.83.0
 pkgrel=1
 pkgdesc="Library for transferring data with URLs"
 arch=(any)
@@ -11,8 +11,8 @@ makedepends=(nds-pkg-config dkp-toolchain-vars)
 options=(!strip libtool staticlibs)
 source=("https://curl.se/download/curl-${pkgver}.tar.xz"
         "${pkgname}.patch")
-sha256sums=("0ded0808c4d85f2ee0db86980ae610cc9d165e9ca9da466196cc73c346513713"
-            "d939bd2d5a8ce045358235ff75b60b3d1cf9819dd42ea598d69bd8586a537407")
+sha256sums=("bbff0e6b5047e773f3c3b084d80546cc1be4e354c09e419c2d0ef6116253511a"
+            "15f5f3684cce0664e58cb87a20255058b41c4140133b1586ffbc30c46c31983d")
 
 build() {
   cd curl-$pkgver
@@ -29,7 +29,8 @@ build() {
     --disable-shared --enable-static \
     --disable-ipv6 --disable-unix-sockets \
     --disable-manual --disable-ntlm-wb \
-    --disable-threaded-resolver --with-wolfssl=$PORTLIBS_PREFIX
+    --disable-threaded-resolver --disable-socketpair \
+    --with-wolfssl=$PORTLIBS_PREFIX
   
   make -C lib
 }
