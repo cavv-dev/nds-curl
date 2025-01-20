@@ -22,7 +22,7 @@ build() {
   patch -Np1 -i "$srcdir/$pkgname.patch"
   
   ./configure CFLAGS="${CFLAGS}" \
-    CPPFLAGS="-DWOLFSSL_NDS -I${DEVKITPRO}/calico/include ${CPPFLAGS}" \
+    CPPFLAGS="-DWOLFSSL_NDS -I${DEVKITPRO}/calico/include -I${DEVKITPRO}/libnds/include/sys/ ${CPPFLAGS}" \
     LIBS="-ldswifi9 -lcalico_ds9" \
     LDFLAGS="-specs=${DEVKITPRO}/calico/share/ds9.specs -L${DEVKITPRO}/calico/lib ${LDFLAGS}" \
     --prefix=$PORTLIBS_PREFIX --host=arm-none-eabi \
