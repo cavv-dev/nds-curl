@@ -2,7 +2,7 @@
  curl and wolfssl libraries for Nintendo DS(i)
 
 Includes:
-- curl (7.72.0)
+- curl (7.83.0)
 - wolfssl (5.7.6)
 
 Check the releases for the latest pkg files.
